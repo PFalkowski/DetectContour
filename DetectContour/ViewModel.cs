@@ -41,22 +41,7 @@ namespace DetectContour
                 }
             }
         }
-        private BitmapImage _contoursImage;
-        public BitmapImage ContoursImage
-        {
-            get
-            {
-                return _contoursImage;
-            }
-            set
-            {
-                if (value != _contoursImage)
-                {
-                    _contoursImage = value;
-                    OnPropertyChanged(nameof(ContoursImage));
-                }
-            }
-        }
+
         public ViewModel()
         {
             OpenImageCommand = new DelegateCommand(openImage);
@@ -75,7 +60,6 @@ namespace DetectContour
                 var fileName = InputOutputService.GetFileNameForRead(null, null, null);
                 if (string.IsNullOrEmpty(fileName)) return;
                 CurrentImage = new BitmapImage(new Uri(fileName));
-                ReadToBitmap(fileName);
                 GetContours(fileName);
             }
             catch (Exception ex)
@@ -83,22 +67,13 @@ namespace DetectContour
                 InputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
             }
         }
-
-        private void ReadToBitmap(string fileName)
-        {
-            frame = new Image<Bgr, byte>((Bitmap)Bitmap.FromFile(fileName));
-            _currentBitmap = (Bitmap)Bitmap.FromFile(fileName);
-        }
-
+        
         public DelegateCommand OpenImageCommand { get; private set; }
         public DelegateCommand SaveContoursCommand { get; private set; }
 
-        Image<Bgr, byte> frame;
-        public const string outputFileName = "output.png";
-        private System.Drawing.Bitmap _currentBitmap = null;
-
         private LineSegment2D[] GetContours(string fileName)
         {
+            Image<Bgr, byte> frame;
             double cannyThreshold = 180.0;
             frame = new Image<Bgr, byte>((Bitmap)Bitmap.FromFile(fileName));
             frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
