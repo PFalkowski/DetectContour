@@ -161,6 +161,12 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\OneDrive\clean install min\repos\SpatialMapsCompare\IOService\IOService.csproj">
+      <Project>{b9dbcc45-0821-431c-939c-cca3573971b8}</Project>
+      <Name>IOService</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
