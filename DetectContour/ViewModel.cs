@@ -17,11 +17,13 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Emgu.CV.CvEnum;
+using System.Windows.Shapes;
 
 namespace DetectContour
 {
     public class ViewModel : BindableBase
     {
+        private Canvas _hostageCanvas;
         public IOService InputOutputService = new DesktopIOService();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
@@ -42,8 +44,9 @@ namespace DetectContour
             }
         }
 
-        public ViewModel()
+        public ViewModel(Canvas canvasToDraw)
         {
+            _hostageCanvas = canvasToDraw;
             OpenImageCommand = new DelegateCommand(openImage);
             SaveContoursCommand = new DelegateCommand(saveContours);
         }
@@ -60,14 +63,40 @@ namespace DetectContour
                 var fileName = InputOutputService.GetFileNameForRead(null, null, null);
                 if (string.IsNullOrEmpty(fileName)) return;
                 CurrentImage = new BitmapImage(new Uri(fileName));
-                GetContours(fileName);
+                var contours = GetContours(fileName);
+                var lines = ConvertToLines(contours);
+                DrawOnCanvas(lines);
             }
             catch (Exception ex)
             {
                 InputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
             }
         }
-        
+        public List<Line> ConvertToLines (LineSegment2D[] lineSegments)
+        {
+            List<Line> lines = new List<Line>(lineSegments.Count());
+            foreach (var line in lineSegments)
+            {
+                var temp = new Line();
+                temp.X1 = line.P1.X;
+                temp.Y1 = line.P1.Y;
+                temp.X2 = line.P2.X;
+                temp.Y2 = line.P2.Y;
+                lines.Add(temp);
+            }
+            return lines;
+        }
+
+        public void DrawOnCanvas(List<Line> lines)
+        {
+            _hostageCanvas.Children.Clear();
+            foreach (var line in lines)
+            {
+                line.Stroke = System.Windows.Media.Brushes.Brown;
+                line.StrokeThickness = 2;
+                _hostageCanvas.Children.Add(line);
+            }
+        }
         public DelegateCommand OpenImageCommand { get; private set; }
         public DelegateCommand SaveContoursCommand { get; private set; }
 
