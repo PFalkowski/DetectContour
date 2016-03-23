@@ -63,7 +63,9 @@ namespace DetectContour
                 var fileName = InputOutputService.GetFileNameForRead(null, null, null);
                 if (string.IsNullOrEmpty(fileName)) return;
                 CurrentImage = new BitmapImage(new Uri(fileName));
-                var contours = GetContours(fileName);
+                var image = ReadImage(fileName);
+                var imageProcessed = Preprocess(image);
+                var contours = GetContours(imageProcessed);
                 var lines = ConvertToLines(contours);
                 DrawOnCanvas(lines);
             }
@@ -72,7 +74,49 @@ namespace DetectContour
                 InputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
             }
         }
-        public List<Line> ConvertToLines (LineSegment2D[] lineSegments)
+
+        public DelegateCommand OpenImageCommand { get; private set; }
+        public DelegateCommand SaveContoursCommand { get; private set; }
+        private Image<Bgr, byte> ReadImage(string fileName)
+        {
+            return new Image<Bgr, byte>((Bitmap)Bitmap.FromFile(fileName));
+        }
+        private UMat Preprocess(Image<Bgr, byte> frame)
+        {
+            frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
+            //Convert the image to grayscale and filter out the noise
+            UMat uimage = new UMat();
+            CvInvoke.CvtColor(frame, uimage, ColorConversion.Bgr2Gray);
+            //use image pyr to remove noise
+            UMat pyrDown = new UMat();
+            CvInvoke.PyrDown(uimage, pyrDown);
+            CvInvoke.PyrUp(pyrDown, uimage);
+            return uimage;
+        }
+        // reference http://www.codeproject.com/Articles/196168/Contour-Analysis-for-Image-Recognition-in-C
+        private LineSegment2D[] GetContours(UMat uimage)
+        {
+            #region Canny and edge detection
+
+            double cannyThreshold = 180.0;
+            double cannyThresholdLinking = 120.0;
+            UMat cannyEdges = new UMat();
+
+            CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
+
+            LineSegment2D[] lines = CvInvoke.HoughLinesP(
+               cannyEdges,
+               1, //Distance resolution in pixel-related units
+               Math.PI / 45.0, //Angle resolution measured in radians.
+               10, //threshold
+               1, //min Line width
+               30); //gap between lines
+
+            #endregion
+
+            return lines;
+        }
+        private List<Line> ConvertToLines(LineSegment2D[] lineSegments)
         {
             List<Line> lines = new List<Line>(lineSegments.Count());
             foreach (var line in lineSegments)
@@ -93,46 +137,9 @@ namespace DetectContour
             foreach (var line in lines)
             {
                 line.Stroke = System.Windows.Media.Brushes.Brown;
-                line.StrokeThickness = 2;
+                line.StrokeThickness = 1;
                 _hostageCanvas.Children.Add(line);
             }
-        }
-        public DelegateCommand OpenImageCommand { get; private set; }
-        public DelegateCommand SaveContoursCommand { get; private set; }
-
-        // reference http://www.codeproject.com/Articles/196168/Contour-Analysis-for-Image-Recognition-in-C
-        private LineSegment2D[] GetContours(string fileName)
-        {
-            Image<Bgr, byte> frame;
-            double cannyThreshold = 180.0;
-            frame = new Image<Bgr, byte>((Bitmap)Bitmap.FromFile(fileName));
-            frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
-            //Convert the image to grayscale and filter out the noise
-            UMat uimage = new UMat();
-            CvInvoke.CvtColor(frame, uimage, ColorConversion.Bgr2Gray);
-            //use image pyr to remove noise
-            UMat pyrDown = new UMat();
-            CvInvoke.PyrDown(uimage, pyrDown);
-            CvInvoke.PyrUp(pyrDown, uimage);
-
-            #region Canny and edge detection
-
-            double cannyThresholdLinking = 120.0;
-            UMat cannyEdges = new UMat();
-            
-            CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
-
-            LineSegment2D[] lines = CvInvoke.HoughLinesP(
-               cannyEdges,
-               1, //Distance resolution in pixel-related units
-               Math.PI / 45.0, //Angle resolution measured in radians.
-               10, //threshold
-               1, //min Line width
-               30); //gap between lines
-
-            #endregion
-
-            return lines;
         }
     }
 }
