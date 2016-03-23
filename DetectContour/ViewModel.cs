@@ -100,6 +100,7 @@ namespace DetectContour
         public DelegateCommand OpenImageCommand { get; private set; }
         public DelegateCommand SaveContoursCommand { get; private set; }
 
+        // reference http://www.codeproject.com/Articles/196168/Contour-Analysis-for-Image-Recognition-in-C
         private LineSegment2D[] GetContours(string fileName)
         {
             Image<Bgr, byte> frame;
