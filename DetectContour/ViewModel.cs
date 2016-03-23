@@ -118,15 +118,16 @@ namespace DetectContour
 
             double cannyThresholdLinking = 120.0;
             UMat cannyEdges = new UMat();
+            
             CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
 
             LineSegment2D[] lines = CvInvoke.HoughLinesP(
                cannyEdges,
                1, //Distance resolution in pixel-related units
                Math.PI / 45.0, //Angle resolution measured in radians.
-               30, //threshold
+               10, //threshold
                1, //min Line width
-               150); //gap between lines
+               30); //gap between lines
 
             #endregion
 
