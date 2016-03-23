@@ -124,9 +124,9 @@ namespace DetectContour
                cannyEdges,
                1, //Distance resolution in pixel-related units
                Math.PI / 45.0, //Angle resolution measured in radians.
-               20, //threshold
-               30, //min Line width
-               10); //gap between lines
+               30, //threshold
+               1, //min Line width
+               150); //gap between lines
 
             #endregion
 
