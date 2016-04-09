@@ -25,7 +25,7 @@ namespace DetectContour
     {
         private readonly Canvas _hostageCanvas;
         private Canvas _hostageCanvas2;
-        private readonly IOService InputOutputService = new DesktopIOService();
+        private readonly IOService _inputOutputService = new DesktopIOService();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
         private BitmapImage _currentImage;
@@ -49,20 +49,20 @@ namespace DetectContour
         {
             _hostageCanvas = canvasToDraw;
             _hostageCanvas2 = boundingRectCanvas;
-            OpenImageCommand = new DelegateCommand(openImage);
-            SaveContoursCommand = new DelegateCommand(saveContours);
+            OpenImageCommand = new DelegateCommand(OpenImage);
+            SaveContoursCommand = new DelegateCommand(SaveContours);
         }
 
-        private void saveContours()
+        private void SaveContours()
         {
             throw new NotImplementedException();
         }
 
-        private void openImage()
+        private void OpenImage()
         {
             try
             {
-                var fileName = InputOutputService.GetFileNameForRead(null, null, null);
+                var fileName = _inputOutputService.GetFileNameForRead(null, null, null);
                 if (string.IsNullOrEmpty(fileName)) return;
                 CurrentImage = new BitmapImage(new Uri(fileName));
                 var image = ReadImage(fileName);
@@ -73,7 +73,7 @@ namespace DetectContour
             }
             catch (Exception ex)
             {
-                InputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
+                _inputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
             }
         }
 
@@ -81,7 +81,7 @@ namespace DetectContour
         public DelegateCommand SaveContoursCommand { get; private set; }
         private Image<Bgr, byte> ReadImage(string fileName)
         {
-            return new Image<Bgr, byte>((Bitmap)Bitmap.FromFile(fileName));
+            return new Image<Bgr, byte>((Bitmap)System.Drawing.Image.FromFile(fileName));
         }
         private UMat Preprocess(Image<Bgr, byte> frame)
         {
@@ -121,9 +121,9 @@ namespace DetectContour
 
             return lines;
         }
-        private static IEnumerable<Line> ConvertToLines(LineSegment2D[] lineSegments)
+        private static IEnumerable<Line> ConvertToLines(IReadOnlyCollection<LineSegment2D> lineSegments)
         {
-            var lines = new List<Line>(lineSegments.Length);
+            var lines = new List<Line>(lineSegments.Count);
             foreach (var line in lineSegments)
             {
                 var temp = new Line
