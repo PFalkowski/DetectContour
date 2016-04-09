@@ -24,7 +24,7 @@ namespace DetectContour
     public class ViewModel : BindableBase
     {
         private readonly Canvas _hostageCanvas;
-        private Canvas _hostageCanvas2;
+        private readonly Canvas _hostageCanvas2;
         private readonly IOService _inputOutputService = new DesktopIOService();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
@@ -70,6 +70,9 @@ namespace DetectContour
                 var contours = GetContours(imageProcessed);
                 var lines = ConvertToLines(contours);
                 DrawOnCanvas(_hostageCanvas, lines);
+                var pointCollection = ConvertToPointCollection(contours);
+                var convexHull = GetConvexHull(pointCollection);
+                DrawOnCanvas(_hostageCanvas2, convexHull);
             }
             catch (Exception ex)
             {
@@ -137,6 +140,29 @@ namespace DetectContour
             }
             return lines;
         }
+        private static IEnumerable<PointF> ConvertToPointCollection(IReadOnlyCollection<LineSegment2D> lineSegments)
+        {
+            var collection = new List<PointF>();
+            foreach (var l in lineSegments)
+            {
+                collection.Add(l.P1);
+                collection.Add(l.P2);
+            }
+            return collection;
+        }
+
+        private static IEnumerable<PointF> GetConvexHull(IEnumerable<PointF> points)
+        {
+            var pts = points.ToArray();
+            var result = CvInvoke.ConvexHull(pts, true);
+            return result;
+        }
+        private static IEnumerable<PointF> GetConcaveHull(IEnumerable<PointF> points)
+        {
+            var pts = points.ToArray();
+            var result = CvInvoke.ConvexHull(pts, true);
+            return result;
+        }
 
         private static void DrawOnCanvas(Panel canvas, IEnumerable<Line> lines)
         {
@@ -147,6 +173,52 @@ namespace DetectContour
                 line.StrokeThickness = 1;
                 canvas.Children.Add(line);
             }
+        }
+        private static void DrawOnCanvas(Panel canvas, IEnumerable<PointF> points)
+        {
+            canvas.Children.Clear();
+            var first = true;
+            double firstX = 0.0;
+            double firstY = 0.0;
+            double lastX = 0.0;
+            double lastY = 0.0;
+            foreach (var point in points)
+            {
+                if (first)
+                {
+                    firstX = lastX = point.X;
+                    firstY = lastY = point.Y;
+
+                    first = false;
+                }
+                else
+                {
+                    var line = new Line
+                    {
+                        Stroke = System.Windows.Media.Brushes.Blue,
+                        StrokeThickness = 1,
+                        X1 = lastX,
+                        Y1 = lastY,
+                        X2 = point.X,
+                        Y2 = point.Y
+                    };
+
+                    canvas.Children.Add(line);
+                    lastX = point.X;
+                    lastY = point.Y;
+                }
+            }
+            var lastLine = new Line
+            {
+                Stroke = System.Windows.Media.Brushes.Blue,
+                StrokeThickness = 1,
+                X1 = lastX,
+                Y1 = lastY,
+                X2 = firstX,
+                Y2 = firstY
+            };
+            canvas.Children.Add(lastLine);
+
         }
     }
 }
