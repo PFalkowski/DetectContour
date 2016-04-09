@@ -4,21 +4,14 @@ using Prism.Mvvm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using SpatialMaps;
 using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using System.Drawing;
-using System.IO;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-using System.Windows;
 using Emgu.CV.CvEnum;
 using System.Windows.Shapes;
-using Emgu.CV.Util;
 
 namespace DetectContour
 {
