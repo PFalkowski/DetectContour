@@ -18,6 +18,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using Emgu.CV.CvEnum;
 using System.Windows.Shapes;
+using Emgu.CV.Util;
 
 namespace DetectContour
 {
@@ -25,6 +26,7 @@ namespace DetectContour
     {
         private readonly Canvas _hostageCanvas;
         private readonly Canvas _hostageCanvas2;
+        private readonly Canvas _hostageCanvas3;
         private readonly IOService _inputOutputService = new DesktopIOService();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
@@ -45,10 +47,11 @@ namespace DetectContour
             }
         }
 
-        public ViewModel(Canvas canvasToDraw, Canvas boundingRectCanvas)
+        public ViewModel(Canvas canvasToDraw, Canvas convexHullCanvas, Canvas ContourCanvas)
         {
             _hostageCanvas = canvasToDraw;
-            _hostageCanvas2 = boundingRectCanvas;
+            _hostageCanvas2 = convexHullCanvas;
+            _hostageCanvas3 = ContourCanvas;
             OpenImageCommand = new DelegateCommand(OpenImage);
             SaveContoursCommand = new DelegateCommand(SaveContours);
         }
@@ -67,10 +70,10 @@ namespace DetectContour
                 CurrentImage = new BitmapImage(new Uri(fileName));
                 var image = ReadImage(fileName);
                 var imageProcessed = Preprocess(image);
-                var contours = GetContours(imageProcessed);
-                var lines = ConvertToLines(contours);
+                var canny = GetCanny(imageProcessed);
+                var lines = ConvertToLines(canny);
                 DrawOnCanvas(_hostageCanvas, lines);
-                var pointCollection = ConvertToPointCollection(contours);
+                var pointCollection = ConvertToPointCollection(canny);
                 var convexHull = GetConvexHull(pointCollection);
                 DrawOnCanvas(_hostageCanvas2, convexHull);
             }
@@ -79,6 +82,8 @@ namespace DetectContour
                 _inputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
             }
         }
+
+
 
         public DelegateCommand OpenImageCommand { get; private set; }
         public DelegateCommand SaveContoursCommand { get; private set; }
@@ -102,7 +107,7 @@ namespace DetectContour
             return uimage;
         }
         // reference http://www.codeproject.com/Articles/196168/Contour-Analysis-for-Image-Recognition-in-C
-        private static LineSegment2D[] GetContours(UMat uimage)
+        private static LineSegment2D[] GetCanny(IInputArrayOfArrays uimage)
         {
             #region Canny and edge detection
 
@@ -150,14 +155,8 @@ namespace DetectContour
             }
             return collection;
         }
-
+        
         private static IEnumerable<PointF> GetConvexHull(IEnumerable<PointF> points)
-        {
-            var pts = points.ToArray();
-            var result = CvInvoke.ConvexHull(pts, true);
-            return result;
-        }
-        private static IEnumerable<PointF> GetConcaveHull(IEnumerable<PointF> points)
         {
             var pts = points.ToArray();
             var result = CvInvoke.ConvexHull(pts, true);
@@ -178,10 +177,10 @@ namespace DetectContour
         {
             canvas.Children.Clear();
             var first = true;
-            double firstX = 0.0;
-            double firstY = 0.0;
-            double lastX = 0.0;
-            double lastY = 0.0;
+            var firstX = 0.0;
+            var firstY = 0.0;
+            var lastX = 0.0;
+            var lastY = 0.0;
             foreach (var point in points)
             {
                 if (first)

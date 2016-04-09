@@ -23,7 +23,7 @@ namespace DetectContour
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new ViewModel(LinesCanvas, BoundingRectCanvas);
+            DataContext = new ViewModel(LinesCanvas, ConvexHullCanvas, ContourCanvas);
         }
     }
 }
