@@ -94,8 +94,8 @@ namespace DetectContour
         private UMat Preprocess(Image<Bgr, byte> frame)
         {
             frame = frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Cubic, true);
-            //frame = frame.ThresholdBinary(new Bgr(200, 200, 200), new Bgr(255, 255, 255));
-            //frame = frame.DrawPolyline()
+            //frame = frame.ThresholdBinary(new Bgr(250, 250, 250), new Bgr(255, 255, 255));
+
             //Convert the image to grayscale and filter out the noise
             var uimage = new UMat();
             CvInvoke.CvtColor(frame, uimage, ColorConversion.Bgr2Gray);
@@ -111,8 +111,8 @@ namespace DetectContour
         {
             #region Canny and edge detection
 
-            var cannyThreshold = 180.0;
-            var cannyThresholdLinking = 120.0;
+            var cannyThreshold = 180;
+            var cannyThresholdLinking = 120;
             var cannyEdges = new UMat();
 
             CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
@@ -121,10 +121,10 @@ namespace DetectContour
                cannyEdges,
                1, //Distance resolution in pixel-related units
                Math.PI / 45.0, //Angle resolution measured in radians.
-               20, //threshold
+               22, //threshold
                12, //min Line width
-               30); //gap between lines
-
+               10); //gap between lines
+            
             #endregion
 
             return lines;
