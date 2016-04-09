@@ -23,8 +23,9 @@ namespace DetectContour
 {
     public class ViewModel : BindableBase
     {
-        private Canvas _hostageCanvas;
-        public IOService InputOutputService = new DesktopIOService();
+        private readonly Canvas _hostageCanvas;
+        private Canvas _hostageCanvas2;
+        private readonly IOService InputOutputService = new DesktopIOService();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
         private BitmapImage _currentImage;
@@ -44,9 +45,10 @@ namespace DetectContour
             }
         }
 
-        public ViewModel(Canvas canvasToDraw)
+        public ViewModel(Canvas canvasToDraw, Canvas boundingRectCanvas)
         {
             _hostageCanvas = canvasToDraw;
+            _hostageCanvas2 = boundingRectCanvas;
             OpenImageCommand = new DelegateCommand(openImage);
             SaveContoursCommand = new DelegateCommand(saveContours);
         }
@@ -67,7 +69,7 @@ namespace DetectContour
                 var imageProcessed = Preprocess(image);
                 var contours = GetContours(imageProcessed);
                 var lines = ConvertToLines(contours);
-                DrawOnCanvas(lines);
+                DrawOnCanvas(_hostageCanvas, lines);
             }
             catch (Exception ex)
             {
@@ -83,62 +85,67 @@ namespace DetectContour
         }
         private UMat Preprocess(Image<Bgr, byte> frame)
         {
-            frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
+            frame = frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Cubic, true);
+            //frame = frame.ThresholdBinary(new Bgr(200, 200, 200), new Bgr(255, 255, 255));
+            //frame = frame.DrawPolyline()
             //Convert the image to grayscale and filter out the noise
-            UMat uimage = new UMat();
+            var uimage = new UMat();
             CvInvoke.CvtColor(frame, uimage, ColorConversion.Bgr2Gray);
             //use image pyr to remove noise
-            UMat pyrDown = new UMat();
+            var pyrDown = new UMat();
             CvInvoke.PyrDown(uimage, pyrDown);
             CvInvoke.PyrUp(pyrDown, uimage);
+            //CvInvoke.
             return uimage;
         }
         // reference http://www.codeproject.com/Articles/196168/Contour-Analysis-for-Image-Recognition-in-C
-        private LineSegment2D[] GetContours(UMat uimage)
+        private static LineSegment2D[] GetContours(UMat uimage)
         {
             #region Canny and edge detection
 
-            double cannyThreshold = 180.0;
-            double cannyThresholdLinking = 120.0;
-            UMat cannyEdges = new UMat();
+            var cannyThreshold = 180.0;
+            var cannyThresholdLinking = 120.0;
+            var cannyEdges = new UMat();
 
             CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
 
-            LineSegment2D[] lines = CvInvoke.HoughLinesP(
+            var lines = CvInvoke.HoughLinesP(
                cannyEdges,
                1, //Distance resolution in pixel-related units
                Math.PI / 45.0, //Angle resolution measured in radians.
-               10, //threshold
-               1, //min Line width
+               20, //threshold
+               12, //min Line width
                30); //gap between lines
 
             #endregion
 
             return lines;
         }
-        private List<Line> ConvertToLines(LineSegment2D[] lineSegments)
+        private static IEnumerable<Line> ConvertToLines(LineSegment2D[] lineSegments)
         {
-            List<Line> lines = new List<Line>(lineSegments.Count());
+            var lines = new List<Line>(lineSegments.Length);
             foreach (var line in lineSegments)
             {
-                var temp = new Line();
-                temp.X1 = line.P1.X;
-                temp.Y1 = line.P1.Y;
-                temp.X2 = line.P2.X;
-                temp.Y2 = line.P2.Y;
+                var temp = new Line
+                {
+                    X1 = line.P1.X,
+                    Y1 = line.P1.Y,
+                    X2 = line.P2.X,
+                    Y2 = line.P2.Y
+                };
                 lines.Add(temp);
             }
             return lines;
         }
 
-        public void DrawOnCanvas(List<Line> lines)
+        private static void DrawOnCanvas(Panel canvas, IEnumerable<Line> lines)
         {
-            _hostageCanvas.Children.Clear();
+            canvas.Children.Clear();
             foreach (var line in lines)
             {
                 line.Stroke = System.Windows.Media.Brushes.Brown;
                 line.StrokeThickness = 1;
-                _hostageCanvas.Children.Add(line);
+                canvas.Children.Add(line);
             }
         }
     }
