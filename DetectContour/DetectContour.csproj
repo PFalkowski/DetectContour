@@ -142,6 +142,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="C2DPoint.cs" />
+    <Compile Include="Helper.cs" />
     <Compile Include="ViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -191,7 +193,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="cvextern.dll">
+    <Content Include="..\packages\EmguCV.3.0.0\build\native\x64\cvextern.dll">
+      <Link>cvextern.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

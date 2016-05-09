@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using System.Drawing;
+using System.IO;
 using Emgu.CV.CvEnum;
 using System.Windows.Shapes;
 
@@ -21,6 +22,7 @@ namespace DetectContour
         private readonly Canvas _hostageCanvas2;
         private readonly Canvas _hostageCanvas3;
         private readonly IOService _inputOutputService = new DesktopIOService();
+        private List<PointF> _convexHull = new List<PointF>();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
         private BitmapImage _currentImage;
@@ -51,7 +53,24 @@ namespace DetectContour
 
         private void SaveContours()
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (_convexHull?.Count > 0)
+                {
+                    var path = _inputOutputService.GetFileNameForWrite(null, null, null);
+                    path = System.IO.Path.ChangeExtension(path, ".xml");
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        var converted = Helper.ConvertPointFToC2DPointDummy(_convexHull);
+                        var xdoc = converted.SerializeToXDoc();
+                        xdoc.Save(path);
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                _inputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
+            }
         }
 
         private void OpenImage()
@@ -67,8 +86,8 @@ namespace DetectContour
                 var lines = ConvertToLines(canny);
                 DrawOnCanvas(_hostageCanvas, lines);
                 var pointCollection = ConvertToPointCollection(canny);
-                var convexHull = GetConvexHull(pointCollection);
-                DrawOnCanvas(_hostageCanvas2, convexHull);
+                _convexHull = GetConvexHull(pointCollection).ToList();
+                DrawOnCanvas(_hostageCanvas2, _convexHull);
             }
             catch (Exception ex)
             {
