@@ -17,10 +17,13 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Button x:Name="openFileButton" Margin="10" Content="Open Image" Command="{Binding OpenImageCommand}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75"/>
-        <Image x:Name="image" Source="{Binding CurrentImage}" HorizontalAlignment="Left" Margin="10" Grid.Row="1" VerticalAlignment="Top" Width="200" Height="200"/>
-        <Button x:Name="saveFileButton" Grid.Row="2" Margin="10" Content="Save Contour Info" Command="{Binding SaveContoursCommand}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="116"/>
-        <Canvas Name="linesCanvas" Grid.Column="1" HorizontalAlignment="Left" Margin="10" Grid.Row="1" VerticalAlignment="Top" Height="200" Width="200"/>
+        <Button x:Name="OpenFileButton" Margin="10" Content="Open Image" Command="{Binding OpenImageCommand}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75"/>
+        <Image x:Name="Image" Source="{Binding CurrentImage}" HorizontalAlignment="Left" Margin="10" Grid.Row="1" Grid.Column="0" VerticalAlignment="Top" Width="200" Height="200"/>
+        <Button x:Name="SaveFileButton" Grid.Row="3" Grid.Column="0" Margin="10" Content="Save Contour Info" Command="{Binding SaveContoursCommand}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="116"/>
+        <Canvas Name="LinesCanvas" Grid.Column="1" HorizontalAlignment="Left" Margin="10" Grid.Row="1" VerticalAlignment="Top" Height="200" Width="200"/>
+        <Canvas Name="ConvexHullCanvas" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top" Height="200" Width="200"/>
+        <Canvas Name="ContourCanvas" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top" Height="200" Width="200"/>
     </Grid>
 </Window>
