@@ -50,20 +50,21 @@ namespace DetectContour
             _hostageCanvas2 = convexHullCanvas;
             _hostageCanvas3 = ContourCanvas;
             OpenImageCommand = new DelegateCommand(OpenImage);
-            SaveContoursCommand = new DelegateCommand(SaveContours);
+            SaveContoursCommand = new DelegateCommand(SaveConvexHull);
+            SaveCannyCommand = new DelegateCommand(SaveContours);
         }
 
-        private void SaveContours()
+        private void Save(List<PointF> points)
         {
             try
             {
-                if (_contour?.Count > 0)
+                if (points?.Count > 0)
                 {
                     var path = _inputOutputService.GetFileNameForWrite(null, null, null);
                     path = System.IO.Path.ChangeExtension(path, ".xml");
                     if (!string.IsNullOrEmpty(path))
                     {
-                        var converted = Helper.ConvertPointFToC2DPointDummy(_contour);
+                        var converted = Helper.ConvertPointFToC2DPointDummy(points);
                         var xdoc = converted.SerializeToXDoc();
                         xdoc.Save(path);
                     }
@@ -73,6 +74,15 @@ namespace DetectContour
             {
                 _inputOutputService.PrintToScreen(ex.Message, MessageSeverity.Error);
             }
+        }
+        private void SaveContours()
+        {
+            Save(_contour);
+        }
+
+        private void SaveConvexHull()
+        {
+            Save(_convexHull);
         }
 
         private void OpenImage()
@@ -105,6 +115,8 @@ namespace DetectContour
 
         public DelegateCommand OpenImageCommand { get; private set; }
         public DelegateCommand SaveContoursCommand { get; private set; }
+        public DelegateCommand SaveCannyCommand { get; private set; }
+        
         private Image<Bgr, byte> ReadImage(string fileName)
         {
             return new Image<Bgr, byte>((Bitmap)System.Drawing.Image.FromFile(fileName));
