@@ -37,7 +37,7 @@ namespace DetectContour
                 if (value != _currentImage)
                 {
                     _currentImage = value;
-                    OnPropertyChanged(nameof(CurrentImage));
+                    OnPropertyChanged();
                 }
             }
         }
@@ -88,6 +88,9 @@ namespace DetectContour
                 var pointCollection = ConvertToPointCollection(canny);
                 _convexHull = GetConvexHull(pointCollection).ToList();
                 DrawOnCanvas(_hostageCanvas2, _convexHull);
+                var pre_contours = GetContours(imageProcessed).ToList();
+                var contours = ConvertToLines(pre_contours).ToList();
+                DrawOnCanvas(_hostageCanvas3, contours);
             }
             catch (Exception ex)
             {
@@ -137,6 +140,28 @@ namespace DetectContour
                12, //min Line width
                10); //gap between lines
             
+            #endregion
+
+            return lines;
+        }
+        private static LineSegment2D[] GetContours(IInputArrayOfArrays uimage)
+        {
+            #region Canny and edge detection
+
+            var cannyThreshold = 180;
+            var cannyThresholdLinking = 120;
+            var cannyEdges = new UMat();
+
+            CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
+
+            var lines = CvInvoke.HoughLinesP(
+               cannyEdges,
+               1, //Distance resolution in pixel-related units
+               Math.PI / 45.0, //Angle resolution measured in radians.
+               22, //threshold
+               12, //min Line width
+               10); //gap between lines
+
             #endregion
 
             return lines;
