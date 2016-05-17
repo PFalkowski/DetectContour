@@ -13,6 +13,7 @@ using System.Drawing;
 using System.IO;
 using Emgu.CV.CvEnum;
 using System.Windows.Shapes;
+using Emgu.CV.Util;
 
 namespace DetectContour
 {
@@ -23,6 +24,7 @@ namespace DetectContour
         private readonly Canvas _hostageCanvas3;
         private readonly IOService _inputOutputService = new DesktopIOService();
         private List<PointF> _convexHull = new List<PointF>();
+        private List<PointF> _contour = new List<PointF>();
         public const string PngFilter = "Image|*.bmp;*.png;*.jpg;*.jpeg";
 
         private BitmapImage _currentImage;
@@ -55,13 +57,13 @@ namespace DetectContour
         {
             try
             {
-                if (_convexHull?.Count > 0)
+                if (_contour?.Count > 0)
                 {
                     var path = _inputOutputService.GetFileNameForWrite(null, null, null);
                     path = System.IO.Path.ChangeExtension(path, ".xml");
                     if (!string.IsNullOrEmpty(path))
                     {
-                        var converted = Helper.ConvertPointFToC2DPointDummy(_convexHull);
+                        var converted = Helper.ConvertPointFToC2DPointDummy(_contour);
                         var xdoc = converted.SerializeToXDoc();
                         xdoc.Save(path);
                     }
@@ -88,8 +90,9 @@ namespace DetectContour
                 var pointCollection = ConvertToPointCollection(canny);
                 _convexHull = GetConvexHull(pointCollection).ToList();
                 DrawOnCanvas(_hostageCanvas2, _convexHull);
-                var pre_contours = GetContours(imageProcessed).ToList();
+                var pre_contours = GetContours(imageProcessed);
                 var contours = ConvertToLines(pre_contours).ToList();
+                _contour = ConvertToPointCollection(pre_contours).ToList();
                 DrawOnCanvas(_hostageCanvas3, contours);
             }
             catch (Exception ex)
@@ -108,7 +111,7 @@ namespace DetectContour
         }
         private UMat Preprocess(Image<Bgr, byte> frame)
         {
-            frame = frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Cubic, true);
+            frame = frame.Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
             //frame = frame.ThresholdBinary(new Bgr(250, 250, 250), new Bgr(255, 255, 255));
 
             //Convert the image to grayscale and filter out the noise
@@ -139,12 +142,12 @@ namespace DetectContour
                22, //threshold
                12, //min Line width
                10); //gap between lines
-            
+
             #endregion
 
             return lines;
         }
-        private static LineSegment2D[] GetContours(IInputArrayOfArrays uimage)
+        private static LineSegment2D[] GetContours(IInputOutputArray img)
         {
             #region Canny and edge detection
 
@@ -152,7 +155,7 @@ namespace DetectContour
             var cannyThresholdLinking = 120;
             var cannyEdges = new UMat();
 
-            CvInvoke.Canny(uimage, cannyEdges, cannyThreshold, cannyThresholdLinking);
+            CvInvoke.Canny(img, cannyEdges, cannyThreshold, cannyThresholdLinking);
 
             var lines = CvInvoke.HoughLinesP(
                cannyEdges,
@@ -163,9 +166,77 @@ namespace DetectContour
                10); //gap between lines
 
             #endregion
-
+            
             return lines;
         }
+        //private static VectorOfVectorOfPoint GetContours(IInputOutputArray img)
+        //{
+        //    VectorOfVectorOfPoint contoursDetected = new VectorOfVectorOfPoint(100000000);
+        //    CvInvoke.FindContours(img, contoursDetected, null, Emgu.CV.CvEnum.RetrType.List, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+        //    FindLargestContour(img, contoursDetected);
+        //    return contoursDetected;
+        //}
+        //private static IEnumerable<Line> ConvertToLines(VectorOfVectorOfPoint points)
+        //{
+
+        //    var lines = new List<Line>();
+        //    PointF previous = new PointF();
+        //    //for (int j = 0; j < points.Size; ++j)
+        //    //{
+        //    for (int i = 0; i < points[0].Size; ++i)
+        //    {
+        //        if (i == 0)
+        //        {
+        //            previous = new PointF(points[0][i].X, points[0][i].Y);
+        //        }
+        //        else
+        //        {
+        //            var current = new PointF(points[0][i].X, points[0][i].Y);
+        //            var line = new Line();
+        //            line.X1 = previous.X;
+        //            line.X2 = current.X;
+        //            line.Y1 = previous.Y;
+        //            line.Y2 = current.X;
+        //            lines.Add(line);
+        //            previous = current;
+        //        }
+        //    }
+        //    //}
+        //    return lines;
+        //}
+        //public static VectorOfPoint FindLargestContour(IInputOutputArray cannyEdges, IInputOutputArray result)
+        //{
+        //    int largest_contour_index = 0;
+        //    double largest_area = 0;
+        //    VectorOfPoint largestContour;
+
+        //    using (Mat hierachy = new Mat())
+        //    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+        //    {
+        //        IOutputArray hirarchy;
+
+        //        CvInvoke.FindContours(cannyEdges, contours, hierachy, RetrType.Tree, ChainApproxMethod.ChainApproxNone);
+
+        //        for (int i = 0; i < contours.Size; i++)
+        //        {
+        //            MCvScalar color = new MCvScalar(0, 0, 255);
+
+        //            double a = CvInvoke.ContourArea(contours[i], false);  //  Find the area of contour
+        //            if (a > largest_area)
+        //            {
+        //                largest_area = a;
+        //                largest_contour_index = i;                //Store the index of largest contour
+        //            }
+
+        //            CvInvoke.DrawContours(result, contours, largest_contour_index, new MCvScalar(255, 0, 0));
+        //        }
+
+        //        CvInvoke.DrawContours(result, contours, largest_contour_index, new MCvScalar(0, 0, 255), 3, LineType.EightConnected, hierachy);
+        //        largestContour = new VectorOfPoint(contours[largest_contour_index].ToArray());
+        //    }
+
+        //    return largestContour;
+        //}
         private static IEnumerable<Line> ConvertToLines(IReadOnlyCollection<LineSegment2D> lineSegments)
         {
             var lines = new List<Line>(lineSegments.Count);
@@ -182,6 +253,8 @@ namespace DetectContour
             }
             return lines;
         }
+       
+       
         private static IEnumerable<PointF> ConvertToPointCollection(IReadOnlyCollection<LineSegment2D> lineSegments)
         {
             var collection = new List<PointF>();
@@ -192,7 +265,7 @@ namespace DetectContour
             }
             return collection;
         }
-        
+
         private static IEnumerable<PointF> GetConvexHull(IEnumerable<PointF> points)
         {
             var pts = points.ToArray();
